@@ -1,0 +1,13 @@
+@mixin margin($margin, $direction: all) {
+  @if $direction == all {
+    margin: $margin;
+  } @else if $direction == x {
+    margin-left: $margin;
+    margin-right: $margin;
+  } @else if $direction == y {
+    margin-top: $margin;
+    margin-bottom: $margin;
+  } @else {
+    margin-#{$direction}: $margin;
+  }
+}

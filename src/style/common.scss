@@ -1,0 +1,65 @@
+@import "./constant.scss";
+@import "./mixins/index.scss";
+
+.flex {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@for $size from 12 to 40 {
+  .width#{$size} {
+    width: $size;
+  }
+}
+
+// margin
+.m-xs {
+  @include margin($xs);
+}
+
+.m-sm {
+  @include margin($sm);
+}
+
+.m-md {
+  @include margin($md);
+}
+
+.m-lg {
+  @include margin($lg);
+}
+
+.m-xl {
+  @include margin($xl);
+}
+
+.m-xs {
+  @include margin($xs);
+}
+
+// padding
+.p-xs {
+  @include padding($xs);
+}
+
+.p-sm {
+  @include padding($sm);
+}
+
+.p-md {
+  @include padding($md);
+}
+
+.p-lg {
+  @include padding($lg);
+}
+
+.p-xl {
+  @include padding($xl);
+}
+
+// border
+.bd-btm {
+  @include pxBorder($COLOR_LIGHTGRAY, "bottom");
+}

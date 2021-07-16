@@ -1,0 +1,163 @@
+<template>
+  <div>
+    <el-dialog
+      :visible.sync="visible"
+      :title="title"
+      :width="width"
+      :top="top"
+      :close-on-click-modal="closeOnClickModal"
+      :show-close="showClose"
+      :before-close="close"
+      :modal="modal"
+      :fullscreen="fullscreen"
+      :center="center"
+      :custom-class="customClass"
+      :close-on-press-escape="closeOnPpressEscape"
+      :lock-scroll="lockScroll"
+    >
+      <component :is="__component" />
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import { Dialog } from "element-ui";
+export default {
+  name: "dialogWrapper",
+  components: {
+    [Dialog.name]: Dialog,
+  },
+  props: {
+    title: {
+      type: String,
+    },
+    width: {
+      type: String,
+      default: "50%",
+    },
+
+    fullscreen: {
+      type: Boolean,
+      default: false,
+    },
+
+    top: {
+      type: String,
+      default: "15vh",
+    },
+
+    closeOnClickModal: {
+      type: Boolean,
+      default: true,
+    },
+    showClose: {
+      type: Boolean,
+      default: true,
+    },
+
+    customClass: {
+      type: String,
+    },
+    modal: {
+      type: Boolean,
+      default: true,
+    },
+
+    beforeClose: {
+      type: Function,
+    },
+
+    lockScroll: {
+      type: Boolean,
+      default: false,
+    },
+
+    closeOnPpressEscape: {
+      type: Boolean,
+      default: true,
+    },
+
+    closeAfterSubmit: {
+      type: Boolean,
+      default: true,
+    },
+
+    center: {
+      type: Boolean,
+      default: false,
+    },
+
+    component: {
+      required: true,
+    },
+  },
+  data() {
+    return {
+      visible: !!this.title,
+    };
+  },
+  computed: {
+    __component() {
+      const that = this;
+      return {
+        name: "dialog-slot-content",
+        render() {
+          const vNode = that.component;
+          // 已封装组件在关闭dialog后回调处理
+          if (that.closeAfterSubmit) {
+            if (!vNode.componentOptions) return false;
+
+            let listeners = vNode.componentOptions.listeners || {};
+            const submitEvent = listeners.submit;
+            // 是否有提交事件
+            if (submitEvent) {
+              listeners.submit = function (...args) {
+                submitEvent(...args);
+                that.handleComponentSubmit(...args);
+              };
+            } else {
+              listeners.submit = function (...args) {
+                that.handleComponentSubmit(...args);
+              };
+            }
+            const cancelEvent = listeners.close;
+            // 是否有取消事件
+            if (cancelEvent) {
+              listeners.close = function (...args) {
+                cancelEvent(...args);
+                that.close();
+              };
+            } else {
+              listeners.close = function (...args) {
+                console.log(args);
+                that.close();
+              };
+            }
+            vNode.componentOptions.listeners = listeners;
+          }
+          return vNode;
+        },
+      };
+    },
+  },
+  methods: {
+    // 自定义关闭之前或之后的钩子处理
+    handleComponentSubmit() {
+      if (this.closeAfterSubmit) this.close();
+    },
+    close(done) {
+      if (this.beforeClose) this.beforeClose();
+      if (done) {
+        done();
+      } else {
+        this.visible = false;
+      }
+    },
+    show() {
+      this.visible = true;
+    },
+  },
+};
+</script>
+
+<style></style>
