@@ -4,7 +4,6 @@
   <!-- 功能：多选、自定义头部、自定义列渲染、分页、空格页显示 -->
   <div class="lm--section">
     <el-table
-      ref="table"
       size="medium"
       style="width: 100%"
       min-height="580px"
@@ -16,7 +15,7 @@
       <!-- 判断是否有数据 -->
       <template v-if="columns.length > 0">
         <el-table-column v-if="selection" type="selection" width="55" />
-        <template v-for="({ header, slot, ...item }, index) in columns">
+        <template v-for="({ header, render, ...item }, index) in columns">
           <!-- v-bind 参考react {...props}  传递多属性(仅能传递属性),注意：slot是函数，如果用v-bind后无法获取值，所以要单独抽离出来-->
           <el-table-column
             v-if="!item.hidden"
@@ -27,18 +26,20 @@
           >
             <!-- 头部添加DOM -->
             <template slot="header" slot-scope="scope">
-              {{ renderInSelf(header, scope) }}
-              <slot v-if="header" name="header"></slot>
+              <fragment v-if="header">
+                {{ renderInSelf(header, scope) }}
+                <slot name="header"></slot>
+              </fragment>
               <div class="lm-table__header--item" v-else>
                 {{ scope.column.label }}
               </div>
             </template>
 
             <template slot-scope="scope">
-              <div v-if="slot">
+              <div v-if="render">
                 <!-- 必先执行renderInSelf后生产slot， 才能插入slot中 -->
-                {{ renderInSelf(slot, scope) }}
-                <slot name="dom"></slot>
+                {{ renderNodeInSelf(render, scope) }}
+                <slot name="content"></slot>
               </div>
               <div v-else>
                 <!-- columns设置是否启用省略号展示与提示框 -->
@@ -48,10 +49,7 @@
                   width="200"
                   :content="String(scope.row[item.prop])"
                   :disabled="
-                    !(
-                      Object.prototype.toString.call(item.showPop) ===
-                        '[object Boolean]' && item.showPop
-                    )
+                    !(item.showPop !== false && needPopverByText(scope))
                   "
                 >
                   <!-- 仅展示文本 -->
@@ -145,8 +143,21 @@ export default {
       this.$emit("update:multipleSelection", selection);
     },
     // 渲染Vnode
-    renderInSelf(cb, scope) {
+    renderNodeInSelf(cb, scope) {
       if (cb && cb instanceof Function) cb.call(this, scope);
+    },
+    // 是否需要冒泡弹出框
+    needPopverByText(scope) {
+      const cellWidth = scope.column.realWidth;
+      const prop = scope.column.property;
+      const dom = document.createElement("span");
+      dom.style.display = "inline-block";
+      dom.textContent = scope.row[prop];
+      document.body.appendChild(dom);
+      const width = dom.clientWidth;
+      document.body.removeChild(dom);
+      // console.log(cellWidth, width);
+      return cellWidth < width;
     },
   },
 };

@@ -71,10 +71,15 @@ export default basePage({
       asyncDemoCom();
     },
     showDemoCom() {
+      const handleSubmit = () => {
+        // api请求与逻辑的操作
+        // return false可以阻止弹框关闭
+        return false;
+      };
       showDialog({
         title: "弹出框标题",
         width: "800px",
-        component: <Demo />,
+        component: <Demo onSubmit={handleSubmit} />,
       });
     },
   },

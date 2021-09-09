@@ -1,7 +1,11 @@
 <template>
-  <section class="searchBar-container">
-    <div class="row">
-      <div class="col" v-for="(item, key) in items" :key="key">
+  <section class="searchBar-container" :style="containerWidth">
+    <div class="row" v-for="(_row, index) in itemsRow" :key="index">
+      <div
+        v-for="(item, key) in itemsRow[index]"
+        :class="`col col--span--${rowSize / colSize}`"
+        :key="key"
+      >
         <div class="grid-content bg-purple">
           <!-- 输入框类型 -->
           <fragment v-if="item.type === TYPE.input">
@@ -63,8 +67,12 @@
           </fragment> -->
         </div>
       </div>
-      <div class="col">
-        <div class="searchBar-container--btn-group span-2">
+      <!-- 判断是否为最后一行而显示搜索按钮组 -->
+      <div
+        v-if="isShowSearchBtn(index)"
+        :class="`col col--span--${(rowSize / colSize) * btnCol}`"
+      >
+        <div class="searchBar-container--btn-group">
           <el-button type="primary" @click="handlerSearch">搜索</el-button>
           <el-button @click="handlerReset">重置</el-button>
         </div>
@@ -73,22 +81,40 @@
   </section>
 </template>
 <script>
+/**
+ * 基础搜索栏组件
+ * 支持搜索按钮、重置按钮位置调整：colSize=1/ colSize=2/ colSize=3
+ * 支持渲染内置组件select、input，也支持自定义组件
+ * 内容全部通过外部传入items对象进行渲染
+ */
 export default {
   name: "baseSearchBar",
   props: {
+    // 搜索组件整体宽度
+    width: {
+      type: [Number, String],
+      default: 1050,
+    },
     // 搜索对象集合
     items: {
       type: Array,
       default: () => [],
     },
+    // 搜索按钮显示位置
+    btnCol: {
+      type: [Number, String],
+      default: 1,
+    },
     // 动态设置每行显示几个搜索条件
-    col: {
-      type: Number,
+    colSize: {
+      type: [Number, String],
       default: 3,
     },
   },
   data() {
     return {
+      // 每行占24格
+      rowSize: 24,
       initValues: {},
       TYPE: {
         input: "input",
@@ -115,10 +141,33 @@ export default {
     },
   },
   computed: {
-    // 用于根据全部搜索条件计算出需要分几行,   TODO 还没处理
-    len() {
-      if (this.items.length > this.col.length) {
-        this.items.length / this.col.length;
+    containerWidth() {
+      const minWidth = "800px";
+      const width =
+        Object.prototype.toString.call(this.width) === "[object Number]"
+          ? { width: `${this.width}px` }
+          : { width: this.width };
+      return { ...width, minWidth };
+    },
+    // 用于根据全部搜索条件计算出需要分几行
+    itemsRow() {
+      const items = this.items;
+      const colSize = this.colSize;
+      if (items.length > colSize) {
+        const lineNum =
+          items.length % colSize === 0
+            ? items.length / colSize
+            : Math.ceil(items.length / colSize);
+
+        return items.reduce((prev, _, index) => {
+          if (index < lineNum) {
+            return [
+              ...prev,
+              this.items.slice(index * colSize, index * colSize + colSize),
+            ];
+          }
+          return prev;
+        }, []);
       }
       return this.items.length;
     },
@@ -130,26 +179,38 @@ export default {
     },
   },
   methods: {
+    isShowSearchBtn(index) {
+      return this.itemsRow.length - 1 === index;
+    },
     renderInSelf(cb, attrs) {
       if (cb && cb instanceof Function) cb.call(this, attrs);
     },
     handlerSearch() {
       console.log("handlerSearch", this.searchBarValue);
-      this.$emit("onSearch", this.searchBarValue);
+      this.$emit("search", this.searchBarValue);
     },
     handlerReset() {
       console.log("handlerReset", this.initValues);
       this.items.forEach((item) => {
         item.initValue = this.initValues[item.name];
       });
-      this.$emit("onReset", this.initValues);
+      this.$emit("reset", this.initValues);
     },
   },
 };
 </script>
 <style lang="scss" scoped>
+// 遍历计算一行24格每个百分比
+$rowSize: 24;
+$colSize: 100% / $rowSize;
+@for $i from 1 to $rowSize {
+  .searchBar-container .col--span--#{$i} {
+    width: $i * $colSize !important;
+  }
+}
+
 .searchBar-container {
-  width: 1050px;
+  margin-bottom: 15px;
   .row {
     display: flex;
     flex-wrap: wrap;
@@ -182,15 +243,6 @@ export default {
       .searchBar-container--btn-group {
         display: flex;
         justify-content: flex-end;
-        &.span-2 {
-          width: 350px;
-        }
-        &.span-2 {
-          width: 700px;
-        }
-        &.span-3 {
-          width: 1050px;
-        }
       }
     }
   }

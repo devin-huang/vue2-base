@@ -62,8 +62,8 @@ export const showAsyncDialog = (component, dialogOptions, attrs, events) => {
   });
 };
 
-// 初始化（即创建一个空的Dialog, 定义好vue渲染函数$createElement和全局dialogs变量）
-const dialogs = [];
+// 初始化创建一个默认Dialog实例
+export const dialogs = [];
 initDialog({ component: {} }, false);
 export const create = dialogs[0].$createElement;
 window.h = create;

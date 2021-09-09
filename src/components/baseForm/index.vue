@@ -1,35 +1,31 @@
 <template>
   <el-form
     :model="modelForm"
-    ref="baseForm"
+    ref="__baseForm"
     label-width="100px"
     class="baseForm-container"
     size="mini"
   >
     <template v-for="(item, key) in form">
       <el-form-item
+        :class="item.className"
         :label="item.label"
         :prop="item.name"
         :rules="item.rules"
         :key="key"
       >
-        <!-- 渲染输入框 -->
-        <fragment v-if="item.type === TYPE.input">
+        <!-- 渲染输入框/密码框/输入区域 -->
+        <fragment
+          v-if="
+            item.type === TYPE.input ||
+            item.type === TYPE.password ||
+            item.type === TYPE.textarea
+          "
+        >
           <el-input
-            v-model="item.initValue"
+            :type="item.type"
             v-bind="{ ...item.props }"
-          ></el-input>
-        </fragment>
-        <!-- 渲染密码框 -->
-        <fragment v-else-if="item.type === TYPE.password">
-          <el-input type="password" v-model="item.initValue"></el-input>
-        </fragment>
-        <!-- 渲染输入区域 -->
-        <fragment v-else-if="item.type === TYPE.textarea">
-          <el-input
-            type="textarea"
             v-model="item.initValue"
-            v-bind="{ ...item.props }"
           ></el-input>
         </fragment>
         <!-- 渲染下拉框 -->
@@ -53,9 +49,11 @@
             <el-radio
               v-for="(element, index) in item.options"
               :key="index"
-              :label="element.label"
+              :label="element.value"
               v-bind="{ ...item.props }"
-            />
+            >
+              {{ element.label }}
+            </el-radio>
           </el-radio-group>
         </fragment>
         <!-- 渲染多选 -->
@@ -125,9 +123,21 @@ const TYPE_DOM = {
   [TYPE.checkbox]: "elCheckbox",
   [TYPE.radio]: "elRadio",
 };
+/**
+ * 基础FOMR表单组件
+ * 支持必填校验
+ * 支持渲染内置组件select、input、range，也支持自定义组件
+ * 内容全部通过外部传入form对象进行渲染
+ */
 export default {
   name: "baseForm",
   props: {
+    // 是否为可读模式
+    readOnly: {
+      type: Boolean,
+      default: false,
+    },
+    // 传入得form格式与数据
     form: {
       type: Array,
       default: () => [],
@@ -194,10 +204,10 @@ export default {
       if (cb && cb instanceof Function) cb.call(this, createElement, attrs);
     },
     submitForm() {
-      this.$refs["baseForm"].validate((valid) => {
+      this.$refs["__baseForm"].validate((valid) => {
         if (valid) {
-          alert("submit!");
-          this.$emit("onSubmit", this.modelForm);
+          console.log("submit!成功");
+          this.$emit("submit", this.modelForm);
         } else {
           console.log("error submit!!");
           return false;
@@ -205,11 +215,11 @@ export default {
       });
     },
     resetForm() {
-      this.$refs["baseForm"].resetFields();
+      this.$refs["__baseForm"].resetFields();
       this.form.forEach((item) => {
         item.initValue = this.initValues[item.name];
       });
-      this.$emit("onReset", this.initValues);
+      this.$emit("reset", this.initValues);
     },
   },
 };

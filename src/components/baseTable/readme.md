@@ -6,7 +6,7 @@ import vm from '../../main'
 let $vm = null;
 
 // 获取当前调用的组件实例this
-const __getNodeVm = (that) =>
+const getRootNodeVm = (that) =>
   new Promise((resolve, reject) => {
     try {
       $vm = that;
@@ -31,6 +31,7 @@ const columns = [
     label: '名称',
     prop: 'name',
     width: '220px',
+    showPop: false, // 默认超出宽度会冒泡显示全部内容，showPop: false则不冒泡显示
   },
   {
     align: 'left',
@@ -130,4 +131,4 @@ const deleteItem = async function ({ row, $index }) {
 }
 ```
 
-export { $vm, columns, \_\_getNodeVm };
+export { $vm, columns, getRootNodeVm };

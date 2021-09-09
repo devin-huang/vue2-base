@@ -76,7 +76,7 @@ export default {
       type: Boolean,
       default: true,
     },
-
+    // 提交后是否关闭dialog
     closeAfterSubmit: {
       type: Boolean,
       default: true,
@@ -103,16 +103,32 @@ export default {
         name: "dialog-slot-content",
         render() {
           const vNode = that.component;
-          // 已封装组件在关闭dialog后回调处理
+          // 关闭弹框前回调处理
           if (that.closeAfterSubmit) {
             if (!vNode.componentOptions) return false;
 
+            // 弹框内得常规组件或者异步组件触发submit或close自定义事件时关闭弹框
             let listeners = vNode.componentOptions.listeners || {};
             const submitEvent = listeners.submit;
-            // 是否有提交事件
+            // 异步加载组件是否有提交事件
             if (submitEvent) {
-              listeners.submit = function (...args) {
-                submitEvent(...args);
+              // 定义Dialog嵌套得组件submit事件
+              listeners.submit = async function (...args) {
+                // 提交后控制是否关闭弹框，在普通函数与Promise最后return false
+                const handleSubmitEvent = submitEvent(...args);
+                if (handleSubmitEvent.then) {
+                  const response = await handleSubmitEvent;
+                  // 阻止弹框在Promise隐藏
+                  if (response === false) {
+                    return false;
+                  }
+                } else {
+                  // 阻止弹框在普通函数隐藏
+                  if (handleSubmitEvent === false) {
+                    return false;
+                  }
+                }
+
                 that.handleComponentSubmit(...args);
               };
             } else {
@@ -121,8 +137,9 @@ export default {
               };
             }
             const cancelEvent = listeners.close;
-            // 是否有取消事件
+            // 异步加载组件是否有取消事件
             if (cancelEvent) {
+              // 定义Dialog嵌套得组件close事件
               listeners.close = function (...args) {
                 cancelEvent(...args);
                 that.close();
